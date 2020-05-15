@@ -1,5 +1,7 @@
 import yaml, telegram, logging
 
+from telegram import InputMediaPhoto
+
 from modules.pytg.Manager import Manager
 
 from modules.pytg.ModulesLoader import ModulesLoader
@@ -41,6 +43,8 @@ class RequestsManager(Manager):
         # Send message to admins
         self.__send_request_message(bot, request_id, request_data, lang)
 
+        return request_id
+
     def __data_replace(self, text, entries):
         for key in entries.keys():
             text = text.replace("[{}]".format(key), str(entries[key]))
@@ -67,23 +71,42 @@ class RequestsManager(Manager):
 
         reply_markup = menu_manager.create_reply_markup(request_format["reply_markup_id"], lang, meta = menu_meta)
 
-        bot.sendMessage(
-            chat_id = chat_id,
-            text = text,
-            reply_markup = reply_markup,
-            parse_mode = telegram.ParseMode.MARKDOWN
-        )
+        media_info = None
+        if "media" in request_format.keys():
+            media_info = request_format["media"]
+
+        if media_info:
+            if media_info["type"] == "photo":
+                if media_info["identifier"] == "local_path":
+                    photo_data = open(request_data["entries"][media_info["entry_id"]], "rb")
+                else:
+                    photo_data = request_data["entries"][media_info["entry_id"]]
+
+                bot.sendPhoto(
+                    chat_id = chat_id,
+                    caption = text,
+                    photo = photo_data,
+                    reply_markup = reply_markup,
+                    parse_mode = telegram.ParseMode.MARKDOWN
+                )
+        else:
+            bot.sendMessage(
+                chat_id = chat_id,
+                text = text,
+                reply_markup = reply_markup,
+                parse_mode = telegram.ParseMode.MARKDOWN
+            )
 
     def __save_request_data(self, request_id, author_chat_id, request_type, entries):
         data_manager = ModulesLoader.load_manager("data")
 
-        request_data = data_manager.create_data("requests", request_id)
+        request_data = data_manager.create_data("requests", request_id, module="requests")
 
         request_data["author"] = author_chat_id
         request_data["type"] = request_type 
         request_data["entries"] = entries 
 
-        data_manager.save_data("requests", request_id, request_data)
+        data_manager.save_data("requests", request_id, request_data, module="requests")
 
         return request_data
 
