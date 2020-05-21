@@ -30,12 +30,11 @@ class RequestsManager(Manager):
 
         if not lang:
             config_manager = ModulesLoader.load_manager("config")
-            lang_settings = config_manager.load_settings_file("lang")
+            lang_settings = config_manager.load_settings_file("requests", "lang")
             lang = lang_settings["default"]
 
         # Generate request's ID
-        idgen_manager = ModulesLoader.load_manager("idgen")
-        request_id = idgen_manager.generate_id("requests")
+        request_id = self.__generate_request_id()
 
         # Save request data
         request_data = self.__save_request_data(request_id, author_chat_id, request_type, entries)
@@ -119,3 +118,15 @@ class RequestsManager(Manager):
         file_path = "{}/formats/{}/{}.yaml".format(ModulesLoader.get_module_content_folder("requests"), lang, format_id)
 
         return yaml.safe_load(open(file_path, 'r'))
+
+    def __generate_request_id(self):
+        file_path = "{}/ids.yaml".format(ModulesLoader.get_module_content_folder("requests"))
+
+        current_ids = yaml.safe_load(open(file_path, 'r'))
+
+        request_id = current_ids["last_request_id"] + 1
+        current_ids["last_request_id"] = request_id
+
+        yaml.safe_dump(current_ids, open(file_path, 'w'))
+
+        return request_id

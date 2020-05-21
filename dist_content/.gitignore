@@ -1,2 +1,4 @@
 data/**/*.yaml
 !data/**/__default.yaml
+
+*.yaml

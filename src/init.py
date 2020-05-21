@@ -29,4 +29,4 @@ def load_manager():
     return RequestsManager.load()
 
 def depends_on():
-    return ["bot", "idgen", "data", "menu", "text"]
+    return ["bot", "forms"]
